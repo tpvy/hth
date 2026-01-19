@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trường THPT Chợ Đồn</title>
+    <style>
+        /* --- Cấu hình chung --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f2f6fc;
+            color: #333;
+            line-height: 1.6; /* Tăng khoảng cách dòng cho dễ đọc */
+        }
+
+        /* --- Header --- */
+        header {
+            background-color: #0056b3;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        header h1 {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 16px;
+            font-style: italic;
+        }
+
+        /* --- Navigation (Menu) --- */
+        nav {
+            background-color: #003f88;
+            text-align: center;
+            padding: 15px;
+            position: sticky; /* Giúp menu dính lên trên khi cuộn */
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+            color: #ffcc00; /* Thêm màu khi di chuột vào */
+        }
+
+        /* --- Nội dung chính --- */
+        .container {
+            max-width: 1000px; /* Giới hạn chiều rộng để nhìn đẹp hơn trên màn hình lớn */
+            margin: 0 auto;
+            padding: 25px;
+        }
+
+        .section {
+            background-color: white;
+            margin-bottom: 25px;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            color: #0056b3;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f2f6fc; /* Thêm đường gạch chân cho tiêu đề */
+            padding-bottom: 5px;
+        }
+
+        .section p {
+            text-align: justify; /* Căn đều 2 bên văn bản */
+        }
+
+        .section img {
+            width: 100%;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        /* --- Footer --- */
+        footer {
+            background-color: #003f88;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header id="home">
+        <h1>Trường THPT Chợ Đồn</h1>
+        <p>Nơi chắp cánh ước mơ học sinh</p>
+    </header>
+
+    <nav>
+        <a href="#home">Trang chủ</a>
+        <a href="#intro">Giới thiệu</a>
+        <a href="#facilities">Cơ sở vật chất</a>
+        <a href="#activities">Hoạt động</a>
+        <a href="#contact">Liên hệ</a>
+    </nav>
+
+    <div class="container">
+        
+        <div class="section" id="intro">
+            <h2>Giới thiệu</h2>
+            <p>Trường Trung học Phổ thông Chợ Đồn là một trong những ngôi trường có truyền thống dạy tốt – học tốt, luôn chú trọng phát triển toàn diện cho học sinh về kiến thức, kỹ năng và đạo đức.</p>
+        </div>
+
+        <div class="section" id="facilities">
+            <h2>Cơ sở vật chất</h2>
+            <p>Nhà trường có hệ thống phòng học khang trang, đầy đủ trang thiết bị hiện đại phục vụ cho việc dạy và học. Khuôn viên trường xanh – sạch – đẹp, tạo môi trường học tập thân thiện cho học sinh.</p>
+        </div>
+
+        <div class="section" id="activities">
+            <h2>Hoạt động học tập</h2>
+            <p>Học sinh được tham gia nhiều hoạt động học tập sáng tạo, các cuộc thi học sinh giỏi, nghiên cứu khoa học, giúp phát triển tư duy và năng lực cá nhân.</p>
+        </div>
+
+        <div class="section">
+            <h2>Hoạt động ngoại khóa</h2>
+            <p>Nhà trường thường xuyên tổ chức các hoạt động văn nghệ, thể thao, tình nguyện, giúp học sinh rèn luyện kỹ năng sống và tinh thần đoàn kết.</p>
+        </div>
+
+    </div>
+
+    <footer id="contact">
+        <p>&copy; 2026 Trường THPT Chợ Đồn</p>
+        <p>Địa chỉ: Chợ Đồn, Bắc Kạn</p>
+    </footer>
+
+</body>
+</html>
