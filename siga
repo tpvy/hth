@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hướng Nghiệp Ngành AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#050505; --ink2:#0d0d0d; --ink3:#111; --ink4:#161616;
+  --border:#242424; --border2:#2e2e2e;
+  --text:#e8e6e1; --dim:#7a7872; --muted:#3a3835;
+  --gold:#c8a45a; --gold2:rgba(200,164,90,.15);
+  --cyan:#4dd9c0; --white:#f5f3ee;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);font-family:'DM Sans',sans-serif;cursor:none}
+
+/* CURSOR */
+#cur{position:fixed;top:0;left:0;pointer-events:none;z-index:9999;width:10px;height:10px;background:var(--gold);border-radius:50%;transform:translate(-50%,-50%);transition:width .18s,height .18s;mix-blend-mode:screen}
+#cur.big{width:44px;height:44px;opacity:.35}
+body.zoom-on #cur{mix-blend-mode:normal;background:var(--gold);box-shadow:0 0 16px var(--gold)}
+body.zoom-on #cur.big{width:60px;height:60px;opacity:.4}
+
+/* PROGRESS */
+#prog{position:fixed;top:0;left:0;height:2px;background:var(--gold);z-index:8000;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* UI OVERLAYS */
+#slide-idx{position:fixed;bottom:20px;right:28px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.15em;color:#282828;z-index:2000}
+#hint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.25em;color:var(--muted);text-transform:uppercase;z-index:2000;pointer-events:none}
+#site-link{position:fixed;bottom:20px;left:24px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;color:#2a2a2a;z-index:2000;text-decoration:none;transition:color .2s}
+#site-link:hover{color:var(--gold)}
+
+/* ZOOM TOGGLE */
+#zt{position:fixed;top:20px;right:24px;z-index:9000;display:flex;align-items:center;gap:9px;background:var(--ink2);border:1px solid var(--border2);padding:9px 16px;cursor:pointer;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase;transition:border-color .25s,color .25s,background .25s;user-select:none}
+#zt:hover{border-color:var(--gold);color:var(--white)}
+#zt.on{border-color:var(--gold);background:rgba(200,164,90,.1);color:var(--gold)}
+.zt-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background .25s,box-shadow .25s;flex-shrink:0}
+#zt.on .zt-dot{background:var(--gold);box-shadow:0 0 8px var(--gold)}
+.zt-k{font-size:9px;opacity:.5;border:1px solid currentColor;padding:1px 5px;border-radius:2px;margin-left:3px}
+
+/* ============================
+   ZOOM SYSTEM
+============================ */
+.z{transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,border-color .28s,background .28s}
+body:not(.zoom-on) .z:hover{transform:scale(1.05);z-index:50;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 0 1px var(--gold)}
+
+body.zoom-on .z:hover{
+  transform:scale(1.6)!important;
+  z-index:500;position:relative;
+  box-shadow:0 40px 120px rgba(0,0,0,.97),0 0 0 2px var(--gold);
+  filter:brightness(1.15)
+}
+/* zoom text elements too */
+.zt{transition:transform .3s cubic-bezier(.34,1.56,.64,1),text-shadow .3s,color .3s}
+body.zoom-on .zt:hover{
+  transform:scale(1.4)!important;
+  z-index:500;position:relative;display:inline-block;
+  text-shadow:0 0 40px rgba(200,164,90,.4);
+  color:var(--white)!important;
+}
+
+/* ============================
+   DECK
+============================ */
+#deck{position:fixed;inset:0}
+.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .5s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.slide.active{opacity:1;pointer-events:all}
+
+/* GRID BG */
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(200,164,90,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(200,164,90,.022) 1px,transparent 1px);background-size:80px 80px;animation:gridDrift 28s linear infinite}
+@keyframes gridDrift{to{background-position:80px 80px}}
+
+/* REVEAL */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .6s,transform .6s cubic-bezier(.4,0,.2,1)}
+.slide.active .rv{opacity:1;transform:translateY(0)}
+.slide.active .rv:nth-child(1){transition-delay:.07s}
+.slide.active .rv:nth-child(2){transition-delay:.17s}
+.slide.active .rv:nth-child(3){transition-delay:.27s}
+.slide.active .rv:nth-child(4){transition-delay:.37s}
+.slide.active .rv:nth-child(5){transition-delay:.47s}
+.slide.active .rv:nth-child(6){transition-delay:.57s}
+.slide.active .rv:nth-child(7){transition-delay:.67s}
+.slide.active .rv:nth-child(8){transition-delay:.77s}
+
+/* SHARED */
+.s-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+.mega{font-family:'Playfair Display',serif;font-size:clamp(40px,6vw,84px);font-weight:900;color:var(--white);line-height:.95}
+.mega em{font-style:italic;color:var(--gold)}
+.full-pad{width:100%;max-width:1400px;padding:52px 64px}
+
+/* ============================
+   S0 — INTRO
+============================ */
+#s0{background:var(--ink);flex-direction:column}
+.s0-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 90% 70% at 15% 50%,rgba(200,164,90,.09) 0%,transparent 55%),
+    radial-gradient(ellipse 60% 80% at 85% 25%,rgba(77,217,192,.06) 0%,transparent 50%),
+    radial-gradient(ellipse 40% 40% at 50% 80%,rgba(200,164,90,.04) 0%,transparent 50%);
+  animation:bgPulse 8s ease-in-out infinite alternate
+}
+@keyframes bgPulse{to{opacity:.6}}
+
+/* Floating AI logos */
+.ai-float{position:absolute;pointer-events:none;user-select:none;font-size:clamp(24px,4vw,48px);opacity:.12;filter:grayscale(1)}
+.ai-float img{width:clamp(32px,4vw,56px);height:clamp(32px,4vw,56px);object-fit:contain;opacity:.15;filter:grayscale(1) brightness(2)}
+
+.af1{top:8%;left:5%;animation:floatA 7s ease-in-out infinite}
+.af2{top:15%;right:8%;animation:floatB 9s ease-in-out infinite .5s}
+.af3{bottom:20%;left:7%;animation:floatA 11s ease-in-out infinite 1s}
+.af4{bottom:12%;right:6%;animation:floatB 8s ease-in-out infinite 1.5s}
+.af5{top:45%;left:2%;animation:floatA 10s ease-in-out infinite 2s}
+.af6{top:40%;right:3%;animation:floatB 12s ease-in-out infinite .8s}
+.af7{top:70%;left:30%;animation:floatA 9s ease-in-out infinite 3s;font-size:20px}
+.af8{top:5%;left:40%;animation:floatB 13s ease-in-out infinite 1.2s;font-size:18px}
+@keyframes floatA{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-18px) rotate(3deg)}}
+@keyframes floatB{0%,100%{transform:translateY(0) rotate(2deg)}50%{transform:translateY(-14px) rotate(-4deg)}}
+
+.s0-inner{position:relative;z-index:2;text-align:center;max-width:1040px;padding:40px}
+.s0-eye{font-family:'DM Mono',monospace;font-size:clamp(11px,1vw,13px);letter-spacing:.4em;color:var(--gold);text-transform:uppercase;margin-bottom:30px;opacity:0;animation:rU .8s .25s forwards}
+.s0-h1{font-family:'Playfair Display',serif;font-size:clamp(62px,12vw,148px);font-weight:900;line-height:.88;color:var(--white);letter-spacing:-.03em;opacity:0;animation:rU .9s .55s forwards}
+.s0-h1 em{display:block;font-style:italic;font-weight:400;color:transparent;-webkit-text-stroke:1.5px var(--gold)}
+.s0-sub{font-size:clamp(16px,2vw,24px);color:var(--dim);font-weight:300;margin-top:30px;line-height:1.65;opacity:0;animation:rU .9s .85s forwards;max-width:640px;margin-inline:auto}
+.s0-tags{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:42px;opacity:0;animation:rU .9s 1.1s forwards}
+
+/* ANIMATED TAGS — pulse independently */
+.tag{
+  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.2em;color:var(--dim);
+  text-transform:uppercase;border:1px solid var(--border2);padding:8px 20px;
+}
+.tag:nth-child(1){animation:tagPulse1 3.2s ease-in-out infinite 1.4s}
+.tag:nth-child(2){animation:tagPulse2 4.1s ease-in-out infinite 1.6s}
+.tag:nth-child(3){animation:tagPulse1 3.7s ease-in-out infinite 1.8s}
+.tag:nth-child(4){animation:tagPulse2 5s ease-in-out infinite 2s}
+@keyframes tagPulse1{
+  0%,100%{transform:scale(1);border-color:var(--border2);color:var(--dim)}
+  50%{transform:scale(1.08);border-color:rgba(200,164,90,.6);color:var(--text)}
+}
+@keyframes tagPulse2{
+  0%,100%{transform:scale(1) translateY(0);border-color:var(--border2);color:var(--dim)}
+  40%{transform:scale(1.06) translateY(-3px);border-color:rgba(200,164,90,.5);color:var(--text)}
+}
+
+.s0-rule{width:1px;height:52px;background:linear-gradient(to bottom,transparent,var(--gold),transparent);margin:34px auto 0;opacity:0;animation:rU .7s 1.3s forwards}
+@keyframes rU{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============================
+   S1 — AI LÀ GÌ
+============================ */
+#s1{background:var(--ink)}
+/* Subtle neural net bg */
+.neural-bg{position:absolute;inset:0;opacity:.04;background-image:radial-gradient(circle,rgba(200,164,90,.8) 1px,transparent 1px);background-size:48px 48px}
+
+.four-col{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:36px}
+.ai-card{background:var(--ink3);padding:36px 28px;border-top:2px solid var(--border);cursor:default;position:relative;overflow:hidden}
+.ai-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(200,164,90,.03),transparent);opacity:0;transition:opacity .4s}
+.ai-card:hover::after{opacity:1}
+.ai-card:hover{border-top-color:var(--gold);background:#0e0e0e}
+.c-icon{font-size:32px;margin-bottom:18px;display:block;transition:transform .3s}
+.ai-card:hover .c-icon{transform:scale(1.2)}
+.c-title{font-family:'Playfair Display',serif;font-size:clamp(18px,2vw,26px);font-weight:700;color:var(--white);margin-bottom:12px}
+.c-body{font-size:clamp(13px,1.2vw,16px);color:var(--dim);line-height:1.7;font-weight:300}
+.c-tag{display:inline-block;margin-top:14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;color:var(--gold);border:1px solid rgba(200,164,90,.3);padding:4px 12px}
+
+/* AI logo row */
+.ai-logos-row{display:flex;gap:20px;align-items:center;margin-top:32px;flex-wrap:wrap}
+.ai-logo-chip{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 18px;border:1px solid var(--border2);background:var(--ink3);
+  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--dim);
+  transition:border-color .3s,color .3s,transform .3s;
+}
+.ai-logo-chip:hover{border-color:var(--gold);color:var(--white);transform:translateY(-3px)}
+.ai-logo-chip img{width:20px;height:20px;object-fit:contain;border-radius:4px}
+.ai-logo-emoji{font-size:18px}
+
+/* ============================
+   S2 — NGHỀ NGHIỆP
+============================ */
+#s2{background:var(--ink2)}
+.job-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
+.job-card{background:var(--ink);border:1px solid var(--border);padding:30px 26px;position:relative;overflow:hidden;cursor:default}
+.job-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .4s}
+.job-card:hover::before{transform:scaleX(1)}
+.jn{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--gold);margin-bottom:12px}
+.jtitle{font-family:'Playfair Display',serif;font-size:clamp(18px,2vw,26px);font-weight:700;color:var(--white);margin-bottom:10px;line-height:1.2}
+.jdesc{font-size:clamp(13px,1.2vw,15px);color:var(--dim);line-height:1.65;font-weight:300;margin-bottom:14px}
+.jsal{font-family:'DM Mono',monospace;font-size:clamp(13px,1.4vw,18px);color:var(--cyan)}
+.jlvl{display:flex;gap:5px;margin-top:12px;flex-wrap:wrap}
+.lvl{font-size:10px;letter-spacing:.08em;color:var(--dim);border:1px solid var(--border2);padding:3px 9px;font-family:'DM Mono',monospace}
+
+/* ============================
+   S3 — KỸ NĂNG
+============================ */
+#s3{background:var(--ink)}
+.two-even{display:grid;grid-template-columns:1fr 1fr;gap:72px;width:100%;max-width:1400px;padding:52px 64px;align-items:center}
+.skill-list{display:flex;flex-direction:column;gap:13px}
+.sk{display:flex;align-items:flex-start;gap:18px;padding:22px 26px;border:1px solid var(--border);background:var(--ink2);cursor:default}
+.sk:hover{border-color:var(--gold);background:var(--ink3)}
+.sk-dot{width:9px;height:9px;background:var(--gold);border-radius:50%;margin-top:10px;flex-shrink:0;transition:transform .3s}
+.sk:hover .sk-dot{transform:scale(1.8)}
+.sk-main{font-size:clamp(15px,1.6vw,21px);color:var(--text);line-height:1.4;font-weight:500}
+.sk-sub{font-size:clamp(12px,1.1vw,14px);color:var(--dim);margin-top:5px}
+.quote-box{margin-top:26px;border-left:3px solid var(--gold);padding:22px 28px;background:var(--ink3)}
+.q-text{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(16px,1.8vw,23px);color:var(--white);line-height:1.55}
+.q-src{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--gold);margin-top:10px}
+
+/* ============================
+   S4 — THÁCH THỨC
+============================ */
+#s4{background:var(--ink2)}
+.chal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
+.chal{padding:34px 28px;border:1px solid var(--border);background:var(--ink);position:relative;overflow:hidden;cursor:default}
+.chal:hover{border-color:var(--gold)}
+.chal-bg-num{position:absolute;top:-12px;right:14px;font-family:'Playfair Display',serif;font-size:88px;font-weight:900;color:var(--border);line-height:1;pointer-events:none;transition:color .3s}
+.chal:hover .chal-bg-num{color:rgba(200,164,90,.1)}
+.chal-ico{font-size:26px;margin-bottom:14px}
+.chal-ttl{font-family:'Playfair Display',serif;font-size:clamp(18px,2vw,25px);font-weight:700;color:var(--white);margin-bottom:10px}
+.chal-txt{font-size:clamp(13px,1.2vw,15px);color:var(--dim);line-height:1.7}
+
+/* ============================
+   S5 — LỘ TRÌNH
+============================ */
+#s5{background:var(--ink)}
+.road-wrap{width:100%;max-width:1400px;padding:52px 60px}
+.road-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;margin-top:40px}
+.road-row::before{content:'';position:absolute;top:26px;left:26px;right:26px;height:1px;background:var(--border2)}
+.rs{padding:0 16px 0 0;position:relative;z-index:1;cursor:default}
+.rs-dot{width:14px;height:14px;background:var(--border2);border:2px solid var(--border2);border-radius:50%;margin-bottom:20px;transition:background .3s,border-color .3s,transform .3s}
+.rs:hover .rs-dot{background:var(--gold);border-color:var(--gold);transform:scale(1.5)}
+.rs-phase{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--gold);text-transform:uppercase;margin-bottom:8px}
+.rs-title{font-family:'Playfair Display',serif;font-size:clamp(17px,1.9vw,24px);font-weight:700;color:var(--white);margin-bottom:12px}
+.rs-list{list-style:none;display:flex;flex-direction:column;gap:7px}
+.rs-list li{font-size:clamp(13px,1.2vw,15px);color:var(--dim);line-height:1.5;padding-left:14px;position:relative}
+.rs-list li::before{content:'—';position:absolute;left:0;color:var(--border2)}
+.school-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:30px}
+.sc{background:var(--ink2);border:1px solid var(--border);padding:18px 22px;cursor:default}
+.sc:hover{border-color:var(--gold)}
+.sc-name{font-size:clamp(14px,1.4vw,18px);color:var(--white);font-weight:500;margin-bottom:5px}
+.sc-info{font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:.1em}
+
+/* ============================
+   S6 — LƯƠNG
+============================ */
+#s6{background:var(--ink2)}
+.sal-layout{display:grid;grid-template-columns:1fr 1fr;gap:60px;width:100%;max-width:1400px;padding:52px 64px;align-items:start}
+.sal-list{display:flex;flex-direction:column;gap:12px;margin-top:22px}
+.sal-row{display:flex;align-items:center;gap:20px;padding:22px 24px;background:var(--ink);border:1px solid var(--border);cursor:default}
+.sal-row:hover{border-color:var(--gold)}
+.sal-title{flex:1;font-size:clamp(15px,1.6vw,21px);color:var(--white);font-weight:500}
+.sal-num{font-family:'DM Mono',monospace;font-size:clamp(14px,1.5vw,19px);color:var(--cyan);white-space:nowrap}
+.stat-col{display:flex;flex-direction:column;gap:13px;margin-top:22px}
+.stat-b{background:var(--ink);border:1px solid var(--border);padding:28px 32px;cursor:default}
+.stat-b:hover{border-color:var(--gold)}
+.stat-n{font-family:'Playfair Display',serif;font-size:clamp(36px,5.5vw,68px);font-weight:900;color:var(--white);line-height:1}
+.stat-n span{color:var(--gold)}
+.stat-lbl{font-size:clamp(12px,1.2vw,15px);color:var(--dim);margin-top:6px;line-height:1.5}
+
+/* ============================
+   S7 — THÀNH VIÊN
+============================ */
+#s7{background:var(--ink)}
+.team-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 50%,rgba(200,164,90,.06) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 60% at 80% 40%,rgba(77,217,192,.04) 0%,transparent 50%)
+}
+.team-wrap{width:100%;max-width:1400px;padding:48px 60px;position:relative;z-index:2}
+.team-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:40px}
+.team-title{font-family:'Playfair Display',serif;font-size:clamp(36px,5.5vw,72px);font-weight:900;color:var(--white);line-height:1}
+.team-title em{font-style:italic;color:var(--gold)}
+.team-site{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.15em;color:var(--dim);text-align:right}
+.team-site a{color:var(--gold);text-decoration:none}
+.team-site a:hover{text-decoration:underline}
+.members-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.member{
+  padding:24px 18px;border:1px solid var(--border);background:var(--ink2);
+  text-align:center;position:relative;overflow:hidden;
+  transition:transform .35s cubic-bezier(.34,1.56,.64,1),border-color .3s,box-shadow .3s
+}
+.member:hover{border-color:var(--gold);transform:translateY(-6px) scale(1.04);z-index:10;box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 0 1px var(--gold)}
+.member.lead{border-color:rgba(200,164,90,.3);background:rgba(200,164,90,.05)}
+.member.lead::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold)}
+.m-avatar{
+  width:56px;height:56px;border-radius:50%;border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;margin:0 auto 14px;background:var(--ink3);
+  transition:border-color .3s,transform .3s
+}
+.member:hover .m-avatar{border-color:var(--gold);transform:scale(1.1)}
+.member.lead .m-avatar{border-color:rgba(200,164,90,.5)}
+.m-name{font-family:'Playfair Display',serif;font-size:clamp(12px,1.1vw,15px);font-weight:700;color:var(--white);margin-bottom:8px;line-height:1.3}
+.m-role{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;line-height:1.5}
+.m-tag{display:inline-block;margin-top:10px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;padding:2px 8px;border:1px solid rgba(200,164,90,.4);color:var(--gold)}
+.m-inactive .m-name{color:var(--muted)}
+.m-inactive .m-avatar{opacity:.4}
+.m-inactive .m-role{color:#2a2827}
+.m-inactive::after{content:'—';position:absolute;top:12px;right:12px;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted)}
+
+/* ============================
+   S8 — OUTRO
+============================ */
+#s8{background:var(--ink);flex-direction:column}
+.s8-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(200,164,90,.07) 0%,transparent 60%)}
+.s8-inner{position:relative;z-index:2;text-align:center;max-width:860px;padding:40px}
+.s8-tag{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.35em;color:var(--gold);text-transform:uppercase;margin-bottom:26px;opacity:0}
+.slide.active .s8-tag{animation:rU .8s .2s forwards}
+.s8-h{font-family:'Playfair Display',serif;font-size:clamp(52px,9vw,112px);font-weight:900;color:var(--white);line-height:.88;opacity:0}
+.slide.active .s8-h{animation:rU .9s .5s forwards}
+.s8-h em{display:block;font-style:italic;color:var(--gold)}
+.s8-sub{font-size:clamp(15px,1.8vw,22px);color:var(--dim);margin-top:28px;line-height:1.7;opacity:0}
+.slide.active .s8-sub{animation:rU .9s .8s forwards}
+.s8-div{width:48px;height:1px;background:var(--gold);margin:34px auto;opacity:0}
+.slide.active .s8-div{animation:rU .7s 1.1s forwards}
+.s8-foot{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;opacity:0}
+.slide.active .s8-foot{animation:rU .9s 1.3s forwards}
+</style>
+</head>
+<body>
+<div id="cur"></div>
+<div id="prog"></div>
+<div id="hint">← → / Space · Z = Zoom</div>
+<div id="slide-idx">01 / 09</div>
+<a id="site-link" href="https://phuongvy.xyz/tin/huongnghiepai" target="_blank">phuongvy.xyz/tin/huongnghiepai</a>
+
+<div id="zt" onclick="toggleZoom()">
+  <div class="zt-dot"></div>
+  <span>Zoom</span>
+  <span class="zt-k">Z</span>
+</div>
+
+<div id="deck">
+
+<!-- S0 INTRO -->
+<div class="slide active" id="s0">
+  <div class="s0-bg"></div>
+  <div class="grid-bg"></div>
+
+  <!-- Floating AI brand silhouettes -->
+  <div class="ai-float af1">🤖</div>
+  <div class="ai-float af2">🧠</div>
+  <div class="ai-float af3">💡</div>
+  <div class="ai-float af4">⚡</div>
+  <div class="ai-float af5">🔮</div>
+  <div class="ai-float af6">🌐</div>
+  <div class="ai-float af7">📊</div>
+  <div class="ai-float af8">🚀</div>
+
+  <div class="s0-inner">
+    <div class="s0-eye">Hội Thảo Hướng Nghiệp · Tin Học 12 · Kết Nối Tri Thức · Bài 21</div>
+    <h1 class="s0-h1">Ngành<br><em>Trí Tuệ<br>Nhân Tạo</em></h1>
+    <p class="s0-sub zt">Cơ hội và thách thức trong kỷ nguyên số — Định hướng nghề nghiệp ICT cho thế hệ mới</p>
+    <div class="s0-tags">
+      <div class="tag">AI / Machine Learning</div>
+      <div class="tag">45 phút · 1 tiết</div>
+      <div class="tag">Nhóm trình bày</div>
+      <div class="tag">Bài 21 · Nhiệm vụ 1</div>
+    </div>
+    <div class="s0-rule"></div>
+  </div>
+</div>
+
+<!-- S1 AI LÀ GÌ -->
+<div class="slide" id="s1">
+  <div class="grid-bg"></div>
+  <div class="neural-bg"></div>
+  <div class="full-pad">
+    <div class="s-label rv">01 / Lĩnh vực</div>
+    <h2 class="mega rv zt">Trí Tuệ Nhân Tạo <em>là gì?</em></h2>
+    <div class="four-col">
+      <div class="ai-card z rv">
+        <span class="c-icon">🧠</span>
+        <div class="c-title">Machine Learning</div>
+        <div class="c-body">Máy tính tự học từ dữ liệu, cải thiện hiệu suất theo thời gian mà không cần lập trình cứng từng quy tắc.</div>
+        <div class="c-tag">ML</div>
+      </div>
+      <div class="ai-card z rv">
+        <span class="c-icon">👁️</span>
+        <div class="c-title">Computer Vision</div>
+        <div class="c-body">AI nhận diện hình ảnh, video — từ nhận mặt, xe tự lái đến chẩn đoán ung thư qua hình ảnh y tế.</div>
+        <div class="c-tag">CV</div>
+      </div>
+      <div class="ai-card z rv">
+        <span class="c-icon">💬</span>
+        <div class="c-title">NLP & LLM</div>
+        <div class="c-body">Xử lý ngôn ngữ tự nhiên — ChatGPT, dịch thuật, phân tích cảm xúc, trợ lý ảo thế hệ mới.</div>
+        <div class="c-tag">NLP</div>
+      </div>
+      <div class="ai-card z rv">
+        <span class="c-icon">🤖</span>
+        <div class="c-title">AI Agent & Robotics</div>
+        <div class="c-body">Robot thông minh, AI tự hành — tự động hóa sản xuất, chăm sóc sức khỏe, giao thông và logistics.</div>
+        <div class="c-tag">AGENT</div>
+      </div>
+    </div>
+    <!-- AI Logos row -->
+    <div class="ai-logos-row rv">
+      <div class="ai-logo-chip"><span class="ai-logo-emoji">✦</span> Claude</div>
+      <div class="ai-logo-chip"><span class="ai-logo-emoji">◎</span> ChatGPT</div>
+      <div class="ai-logo-chip"><span class="ai-logo-emoji">✧</span> Gemini</div>
+      <div class="ai-logo-chip"><span class="ai-logo-emoji">𝕏</span> Grok</div>
+      <div class="ai-logo-chip"><span class="ai-logo-emoji">⬡</span> Copilot</div>
+      <div class="ai-logo-chip"><span class="ai-logo-emoji">▲</span> Llama</div>
+      <div class="ai-logo-chip"><span class="ai-logo-emoji">◈</span> Midjourney</div>
+    </div>
+  </div>
+</div>
+
+<!-- S2 NGHỀ NGHIỆP -->
+<div class="slide" id="s2">
+  <div class="grid-bg"></div>
+  <div class="full-pad">
+    <div class="s-label rv">02 / Nghề nghiệp</div>
+    <h2 class="mega rv zt">Cơ Hội <em>Việc Làm AI</em></h2>
+    <div class="job-grid">
+      <div class="job-card z rv">
+        <div class="jn">01</div>
+        <div class="jtitle">AI / ML Engineer</div>
+        <div class="jdesc">Xây dựng, huấn luyện và triển khai mô hình học máy. Làm việc với TensorFlow, PyTorch và hạ tầng MLOps.</div>
+        <div class="jsal">30 – 80 triệu/tháng</div>
+        <div class="jlvl"><span class="lvl">Python</span><span class="lvl">Deep Learning</span><span class="lvl">MLOps</span></div>
+      </div>
+      <div class="job-card z rv">
+        <div class="jn">02</div>
+        <div class="jtitle">Data Scientist</div>
+        <div class="jdesc">Phân tích dữ liệu lớn, tìm insight ẩn, xây dựng mô hình dự đoán phục vụ ra quyết định kinh doanh.</div>
+        <div class="jsal">25 – 60 triệu/tháng</div>
+        <div class="jlvl"><span class="lvl">Statistics</span><span class="lvl">SQL</span><span class="lvl">Tableau</span></div>
+      </div>
+      <div class="job-card z rv">
+        <div class="jn">03</div>
+        <div class="jtitle">NLP Engineer</div>
+        <div class="jdesc">Phát triển chatbot, hệ thống dịch thuật, phân tích cảm xúc và ứng dụng xử lý văn bản thông minh.</div>
+        <div class="jsal">28 – 70 triệu/tháng</div>
+        <div class="jlvl"><span class="lvl">Transformers</span><span class="lvl">BERT</span><span class="lvl">GPT</span></div>
+      </div>
+      <div class="job-card z rv">
+        <div class="jn">04</div>
+        <div class="jtitle">Computer Vision Engineer</div>
+        <div class="jdesc">Xây hệ thống nhận diện ảnh, video — ứng dụng y tế, bảo mật, sản xuất và xe tự lái.</div>
+        <div class="jsal">28 – 65 triệu/tháng</div>
+        <div class="jlvl"><span class="lvl">OpenCV</span><span class="lvl">YOLO</span><span class="lvl">CNN</span></div>
+      </div>
+      <div class="job-card z rv">
+        <div class="jn">05</div>
+        <div class="jtitle">AI Research Scientist</div>
+        <div class="jdesc">Nghiên cứu thuật toán mới, xuất bản công trình khoa học, đẩy ranh giới AI tiến xa hơn.</div>
+        <div class="jsal">50 – 150 triệu/tháng</div>
+        <div class="jlvl"><span class="lvl">PhD preferred</span><span class="lvl">Research</span><span class="lvl">Papers</span></div>
+      </div>
+      <div class="job-card z rv">
+        <div class="jn">06</div>
+        <div class="jtitle">AI Product Manager</div>
+        <div class="jdesc">Dẫn dắt phát triển sản phẩm AI, kết nối kỹ thuật với kinh doanh và định hướng chiến lược AI của công ty.</div>
+        <div class="jsal">35 – 90 triệu/tháng</div>
+        <div class="jlvl"><span class="lvl">Product</span><span class="lvl">Agile</span><span class="lvl">Strategy</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S3 KỸ NĂNG -->
+<div class="slide" id="s3">
+  <div class="grid-bg"></div>
+  <div class="two-even">
+    <div>
+      <div class="s-label rv">03 / Kỹ năng</div>
+      <h2 class="mega rv zt">Kỹ Năng <em>Cần Có</em></h2>
+      <div class="quote-box z rv">
+        <div class="q-text">"AI sẽ không thay thế con người — nhưng người biết dùng AI sẽ thay thế người không biết."</div>
+        <div class="q-src">— Xu hướng nghề nghiệp 2025</div>
+      </div>
+    </div>
+    <div class="skill-list">
+      <div class="sk z rv"><div class="sk-dot"></div><div><div class="sk-main">Lập trình Python & Toán nền tảng</div><div class="sk-sub">Đại số tuyến tính, Xác suất thống kê — bắt buộc với mọi vai trò AI</div></div></div>
+      <div class="sk z rv"><div class="sk-dot"></div><div><div class="sk-main">Machine Learning & Deep Learning</div><div class="sk-sub">Scikit-learn → TensorFlow / PyTorch — từ cơ bản đến nâng cao</div></div></div>
+      <div class="sk z rv"><div class="sk-dot"></div><div><div class="sk-main">Xử lý và phân tích dữ liệu lớn</div><div class="sk-sub">Pandas, SQL, Spark, thiết kế data pipeline end-to-end</div></div></div>
+      <div class="sk z rv"><div class="sk-dot"></div><div><div class="sk-main">Tiếng Anh kỹ thuật chuyên ngành</div><div class="sk-sub">Đọc paper, tài liệu kỹ thuật và tham gia cộng đồng quốc tế</div></div></div>
+      <div class="sk z rv"><div class="sk-dot"></div><div><div class="sk-main">Tư duy phản biện & làm việc nhóm</div><div class="sk-sub">Kỹ năng mềm quyết định 50% sự thành công trong ngành</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- S4 THÁCH THỨC -->
+<div class="slide" id="s4">
+  <div class="grid-bg"></div>
+  <div class="full-pad">
+    <div class="s-label rv">04 / Thách thức</div>
+    <h2 class="mega rv zt">Thách Thức <em>Phải Đối Mặt</em></h2>
+    <div class="chal-grid">
+      <div class="chal z rv"><div class="chal-bg-num">01</div><div class="chal-ico">📚</div><div class="chal-ttl">Học liên tục không ngừng</div><div class="chal-txt">AI phát triển cực kỳ nhanh. Mô hình mới ra mỗi tuần — kỹ năng hôm nay có thể lỗi thời sau một năm.</div></div>
+      <div class="chal z rv"><div class="chal-bg-num">02</div><div class="chal-ico">🌏</div><div class="chal-ttl">Cạnh tranh toàn cầu</div><div class="chal-txt">Làm việc từ xa mở cơ hội nhưng cũng nghĩa là cạnh tranh với nhân tài từ Mỹ, Ấn Độ, Trung Quốc...</div></div>
+      <div class="chal z rv"><div class="chal-bg-num">03</div><div class="chal-ico">⚖️</div><div class="chal-ttl">Đạo đức AI & Pháp lý</div><div class="chal-txt">Thiên kiến dữ liệu, quyền riêng tư, deepfake — kỹ sư AI cần ý thức rõ trách nhiệm xã hội.</div></div>
+      <div class="chal z rv"><div class="chal-bg-num">04</div><div class="chal-ico">💻</div><div class="chal-ttl">Chi phí đào tạo & phần cứng</div><div class="chal-txt">Huấn luyện model lớn cần GPU mạnh và chi phí cloud rất cao, đặc biệt khó khăn với sinh viên.</div></div>
+      <div class="chal z rv"><div class="chal-bg-num">05</div><div class="chal-ico">🧩</div><div class="chal-ttl">Khoảng cách kỹ năng tại VN</div><div class="chal-txt">Chương trình ĐH chưa bắt kịp tốc độ ngành. Sinh viên cần chủ động tự học rất nhiều ngoài giờ lên lớp.</div></div>
+      <div class="chal z rv"><div class="chal-bg-num">06</div><div class="chal-ico">🔥</div><div class="chal-ttl">Áp lực công việc cao</div><div class="chal-txt">Deadline gắt, kỳ vọng lớn từ sản phẩm AI. Burnout là vấn đề thực tế nhiều kỹ sư AI đối mặt.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- S5 LỘ TRÌNH -->
+<div class="slide" id="s5">
+  <div class="grid-bg"></div>
+  <div class="road-wrap">
+    <div class="s-label rv">05 / Đào tạo</div>
+    <h2 class="mega rv zt">Lộ Trình <em>Học Tập</em></h2>
+    <div class="road-row">
+      <div class="rs z rv"><div class="rs-dot"></div><div class="rs-phase">Cấp 3 → Năm 1</div><div class="rs-title">Nền Tảng</div><ul class="rs-list"><li>Toán (Đại số, XS-TK)</li><li>Python cơ bản</li><li>Tiếng Anh đọc tài liệu</li><li>Tư duy logic & thuật toán</li></ul></div>
+      <div class="rs z rv"><div class="rs-dot"></div><div class="rs-phase">Năm 2 → Năm 3</div><div class="rs-title">Chuyên Sâu</div><ul class="rs-list"><li>Machine Learning cơ bản</li><li>Deep Learning, Neural Nets</li><li>Dự án thực tế nhỏ</li><li>Kaggle competitions</li></ul></div>
+      <div class="rs z rv"><div class="rs-dot"></div><div class="rs-phase">Năm 4 → Sau ĐH</div><div class="rs-title">Thực Chiến</div><ul class="rs-list"><li>Internship tại công ty AI</li><li>Chứng chỉ TF Developer / AWS</li><li>Xây portfolio GitHub</li><li>Network cộng đồng AI VN</li></ul></div>
+      <div class="rs z rv"><div class="rs-dot"></div><div class="rs-phase">Đi làm</div><div class="rs-title">Sự Nghiệp</div><ul class="rs-list"><li>Junior → Senior AI Engineer</li><li>Chuyên biệt NLP / CV / MLOps</li><li>Tech Lead hoặc Research</li><li>Startup / Big Tech</li></ul></div>
+    </div>
+    <div class="school-row">
+      <div class="sc z rv"><div class="sc-name">ĐH Bách Khoa HCM / HN</div><div class="sc-info">Khoa CNTT · Trí Tuệ Nhân Tạo</div></div>
+      <div class="sc z rv"><div class="sc-name">ĐH Khoa học Tự nhiên</div><div class="sc-info">Khoa CNTT · Data Science</div></div>
+      <div class="sc z rv"><div class="sc-name">FPT University</div><div class="sc-info">AI Engineering · Liên kết quốc tế</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- S6 LƯƠNG -->
+<div class="slide" id="s6">
+  <div class="grid-bg"></div>
+  <div class="sal-layout">
+    <div>
+      <div class="s-label rv">06 / Thị trường</div>
+      <h2 class="mega rv zt">Mức Lương &<br><em>Thị Trường</em></h2>
+      <div class="sal-list">
+        <div class="sal-row z rv"><div class="sal-title">Intern / Fresher AI</div><div class="sal-num">5 – 15 tr/th</div></div>
+        <div class="sal-row z rv"><div class="sal-title">Junior AI Engineer (1–2 năm)</div><div class="sal-num">15 – 35 tr/th</div></div>
+        <div class="sal-row z rv"><div class="sal-title">Mid-level Engineer (3–5 năm)</div><div class="sal-num">35 – 70 tr/th</div></div>
+        <div class="sal-row z rv"><div class="sal-title">Senior / Lead AI (5+ năm)</div><div class="sal-num">70 – 150 tr/th</div></div>
+        <div class="sal-row z rv"><div class="sal-title">Remote — Công ty nước ngoài</div><div class="sal-num">$4,000–$15,000/th</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="s-label rv" style="opacity:0">—</div>
+      <div class="stat-col">
+        <div class="stat-b z rv"><div class="stat-n">97<span>M</span></div><div class="stat-lbl">Việc làm AI mới toàn cầu dự kiến đến 2025 — World Economic Forum</div></div>
+        <div class="stat-b z rv"><div class="stat-n">40<span>%</span></div><div class="stat-lbl">Tăng trưởng tuyển dụng AI tại Việt Nam mỗi năm — VietnamWorks 2024</div></div>
+        <div class="stat-b z rv"><div class="stat-n">#<span>3</span></div><div class="stat-lbl">AI Engineer — Top 3 nghề tìm kiếm nhiều nhất LinkedIn 2024</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S7 THÀNH VIÊN -->
+<div class="slide" id="s7">
+  <div class="grid-bg"></div>
+  <div class="team-bg"></div>
+  <div class="team-wrap">
+    <div class="team-header rv">
+      <div>
+        <div class="s-label">07 / Nhóm thực hiện</div>
+        <h2 class="team-title">Thành Viên <em>Nhóm</em></h2>
+      </div>
+      <div class="team-site">
+        <div style="margin-bottom:4px;font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase">Truy cập slide</div>
+        <a href="https://phuongvy.xyz/tin/huongnghiepai" target="_blank">phuongvy.xyz/tin/huongnghiepai</a>
+      </div>
+    </div>
+    <div class="members-grid">
+
+      <!-- 1. Tạ Phương Vỹ — LEAD -->
+      <div class="member lead rv">
+        <div class="m-avatar">💻</div>
+        <div class="m-name">Tạ Phương Vỹ</div>
+        <div class="m-role">Làm web nội dung<br>Điều khiển trình chiếu</div>
+        <div class="m-tag">LEAD</div>
+      </div>
+
+      <!-- 2. Nông Văn Định -->
+      <div class="member rv">
+        <div class="m-avatar">📷</div>
+        <div class="m-name">Nông Văn Định</div>
+        <div class="m-role">Thu thập tài liệu<br>Hình ảnh</div>
+        <div class="m-tag">RESEARCH</div>
+      </div>
+
+      <!-- 3. Hứa Thành Hiên -->
+      <div class="member rv">
+        <div class="m-avatar">🎤</div>
+        <div class="m-name">Hứa Thành Hiên</div>
+        <div class="m-role">Thuyết trình<br>Trình bày chính</div>
+        <div class="m-tag">PRESENT</div>
+      </div>
+
+      <!-- 4. Nguyễn Viết An — inactive -->
+      <div class="member m-inactive rv">
+        <div class="m-avatar">👤</div>
+        <div class="m-name">Nguyễn Viết An</div>
+        <div class="m-role">Thành viên</div>
+      </div>
+
+      <!-- 5. Nông Đức Duy -->
+      <div class="member rv">
+        <div class="m-avatar">🛠️</div>
+        <div class="m-name">Nông Đức Duy</div>
+        <div class="m-role">Thành viên nhóm</div>
+      </div>
+
+      <!-- 6. Đinh Ngọc Chấn -->
+      <div class="member rv">
+        <div class="m-avatar">📋</div>
+        <div class="m-name">Đinh Ngọc Chấn</div>
+        <div class="m-role">Thành viên nhóm</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- S8 OUTRO -->
+<div class="slide" id="s8">
+  <div class="s8-bg"></div>
+  <div class="grid-bg"></div>
+  <div class="s8-inner">
+    <div class="s8-tag">Tin Học 12 · Bài 21 · Hướng Nghiệp Ngành AI</div>
+    <h2 class="s8-h">Tương Lai<br><em>Là Của Bạn</em></h2>
+    <p class="s8-sub zt">Kỷ nguyên AI không chỉ dành cho thiên tài — nó dành cho những ai sẵn sàng học hỏi, kiên trì và dám khám phá ranh giới của công nghệ.</p>
+    <div class="s8-div"></div>
+    <div class="s8-foot">AI · Machine Learning · Data Science · Future Ready</div>
+  </div>
+</div>
+
+</div><!-- end deck -->
+
+<script>
+// ── CURSOR ──
+const cur = document.getElementById('cur');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX + 'px';
+  cur.style.top  = e.clientY + 'px';
+});
+document.addEventListener('mouseover', e => {
+  cur.classList.toggle('big', !!(e.target.closest('.z,.zt,#zt,#site-link,.member,.ai-logo-chip')));
+});
+
+// ── ZOOM ──
+let zoomOn = false;
+const ztBtn = document.getElementById('zt');
+function toggleZoom() {
+  zoomOn = !zoomOn;
+  document.body.classList.toggle('zoom-on', zoomOn);
+  ztBtn.classList.toggle('on', zoomOn);
+}
+
+// ── SLIDES ──
+const slides = document.querySelectorAll('.slide');
+const prog   = document.getElementById('prog');
+const idxEl  = document.getElementById('slide-idx');
+let cur_s = 0;
+function goTo(n) {
+  if (n < 0 || n >= slides.length) return;
+  slides[cur_s].classList.remove('active');
+  cur_s = n;
+  slides[cur_s].classList.add('active');
+  prog.style.width = ((cur_s + 1) / slides.length * 100) + '%';
+  idxEl.textContent = String(cur_s+1).padStart(2,'0') + ' / ' + String(slides.length).padStart(2,'0');
+}
+
+// ── KEYBOARD ──
+document.addEventListener('keydown', e => {
+  if (e.key==='z'||e.key==='Z') { toggleZoom(); return; }
+  if (e.key==='ArrowRight'||e.key===' ') { e.preventDefault(); goTo(cur_s+1); }
+  if (e.key==='ArrowLeft') goTo(cur_s-1);
+});
+
+// ── TOUCH ──
+let tx = 0;
+document.addEventListener('touchstart', e => tx = e.touches[0].clientX);
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) > 50) dx < 0 ? goTo(cur_s+1) : goTo(cur_s-1);
+});
+
+goTo(0);
+</script>
+</body>
+</html>
